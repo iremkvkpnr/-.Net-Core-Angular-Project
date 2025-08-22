@@ -14,15 +14,18 @@ namespace MeetingManagement.API.Controllers
         private readonly MeetingManagementDbContext _context;
         private readonly IPasswordService _passwordService;
         private readonly IJwtService _jwtService;
+        private readonly IEmailService _emailService;
 
         public AuthController(
             MeetingManagementDbContext context,
             IPasswordService passwordService,
-            IJwtService jwtService)
+            IJwtService jwtService,
+            IEmailService emailService)
         {
             _context = context;
             _passwordService = passwordService;
             _jwtService = jwtService;
+            _emailService = emailService;
         }
 
         // Kullanıcı kayıt işlemi
@@ -62,6 +65,17 @@ namespace MeetingManagement.API.Controllers
 
                 // JWT token oluştur
                 var token = _jwtService.GenerateToken(user);
+
+                // Hoş geldiniz emaili gönder (async olarak, hata durumunda kayıt işlemini etkilemesin)
+                try
+                {
+                    await _emailService.SendWelcomeEmailAsync(user.Email, user.FirstName, user.LastName);
+                }
+                catch (Exception emailEx)
+                {
+                    // Email gönderme hatası kayıt işlemini etkilemesin, sadece log'la
+                    Console.WriteLine($"Hoş geldiniz emaili gönderilemedi: {emailEx.Message}");
+                }
 
                 return Ok(new AuthResponseDto
                 {

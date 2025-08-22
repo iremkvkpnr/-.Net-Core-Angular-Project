@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using MeetingManagement.Business.Services;
 using MeetingManagement.Data;
 using MeetingManagement.Models;
 using MeetingManagement.Models.DTOs;
@@ -14,10 +15,14 @@ namespace MeetingManagement.API.Controllers
     public class MeetingController : ControllerBase
     {
         private readonly MeetingManagementDbContext _context;
+        private readonly IEmailService _emailService;
+        private readonly IBackgroundJobService _backgroundJobService;
 
-        public MeetingController(MeetingManagementDbContext context)
+        public MeetingController(MeetingManagementDbContext context, IEmailService emailService, IBackgroundJobService backgroundJobService)
         {
             _context = context;
+            _emailService = emailService;
+            _backgroundJobService = backgroundJobService;
         }
 
         // Kullanıcının ID'sini token'dan al
@@ -114,6 +119,31 @@ namespace MeetingManagement.API.Controllers
                     UserEmail = meeting.User.Email
                 };
 
+                // Toplantı iptal bilgilendirme emaili gönder (async olarak, hata durumunda iptal işlemini etkilemesin)
+                try
+                {
+                    await _emailService.SendMeetingCancellationEmailAsync(
+                        meeting.User.Email,
+                        meeting.Title,
+                        "Kullanıcı tarafından iptal edildi");
+                }
+                catch (Exception emailEx)
+                {
+                    // Email gönderme hatası iptal işlemini etkilemesin, sadece log'la
+                    Console.WriteLine($"Toplantı iptal bilgilendirme emaili gönderilemedi: {emailEx.Message}");
+                }
+
+                // İptal edilen toplantıyı 30 dakika sonra silmek için background job başlat
+                try
+                {
+                    _backgroundJobService.ScheduleDeleteSpecificMeeting(meeting.Id, 30);
+                }
+                catch (Exception jobEx)
+                {
+                    // Background job hatası iptal işlemini etkilemesin, sadece log'la
+                    Console.WriteLine($"Background job başlatılamadı: {jobEx.Message}");
+                }
+
                 return Ok(new MeetingApiResponse
                 {
                     Success = true,
@@ -195,6 +225,22 @@ namespace MeetingManagement.API.Controllers
                     UserName = $"{createdMeeting.User.FirstName} {createdMeeting.User.LastName}",
                     UserEmail = createdMeeting.User.Email
                 };
+
+                // Toplantı bilgilendirme emaili gönder (async olarak, hata durumunda toplantı oluşturma işlemini etkilemesin)
+                try
+                {
+                    await _emailService.SendMeetingNotificationEmailAsync(
+                        createdMeeting.User.Email,
+                        createdMeeting.Title,
+                        createdMeeting.Description,
+                        createdMeeting.StartDate,
+                        createdMeeting.EndDate);
+                }
+                catch (Exception emailEx)
+                {
+                    // Email gönderme hatası toplantı oluşturma işlemini etkilemesin, sadece log'la
+                    Console.WriteLine($"Toplantı bilgilendirme emaili gönderilemedi: {emailEx.Message}");
+                }
 
                 return CreatedAtAction(nameof(GetMeeting), new { id = meeting.Id }, new MeetingApiResponse
                 {
