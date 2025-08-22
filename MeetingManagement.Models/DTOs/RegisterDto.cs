@@ -27,5 +27,8 @@ namespace MeetingManagement.Models.DTOs
         [Required(ErrorMessage = "Şifre tekrarı gereklidir")]
         [Compare("Password", ErrorMessage = "Şifreler eşleşmiyor")]
         public string ConfirmPassword { get; set; }
+
+        // Profil resmi yükleme (opsiyonel)
+        public string? ProfileImagePath { get; set; }
     }
 }

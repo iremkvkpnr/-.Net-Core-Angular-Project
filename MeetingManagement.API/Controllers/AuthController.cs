@@ -55,6 +55,7 @@ namespace MeetingManagement.API.Controllers
                     Email = registerDto.Email,
                     Phone = registerDto.Phone,
                     PasswordHash = _passwordService.HashPassword(registerDto.Password),
+                    ProfileImagePath = registerDto.ProfileImagePath,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
                     IsActive = true

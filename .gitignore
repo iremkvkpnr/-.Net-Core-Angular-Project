@@ -485,3 +485,8 @@ node_modules/
 
 # ESLint
 .eslintcache
+
+# SQLite Database Files
+*.db
+*.db-shm
+*.db-wal

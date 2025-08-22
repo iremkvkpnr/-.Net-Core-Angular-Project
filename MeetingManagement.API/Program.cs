@@ -122,6 +122,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAngularApp");
+
+// Static files middleware for file uploads
+app.UseStaticFiles();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
