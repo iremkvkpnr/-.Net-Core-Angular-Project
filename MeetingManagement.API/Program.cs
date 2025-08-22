@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MeetingManagement.Data;
+using MeetingManagement.Business.Services;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,6 +39,10 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
+
+// Business Services - Dependency Injection
+builder.Services.AddScoped<IPasswordService, PasswordService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
 
 // Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
