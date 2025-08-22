@@ -1,0 +1,424 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MeetingManagement.Data;
+using MeetingManagement.Models;
+using MeetingManagement.Models.DTOs;
+using System.Security.Claims;
+
+namespace MeetingManagement.API.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    [Authorize] // Tüm endpoint'ler için authentication gerekli
+    public class MeetingController : ControllerBase
+    {
+        private readonly MeetingManagementDbContext _context;
+
+        public MeetingController(MeetingManagementDbContext context)
+        {
+            _context = context;
+        }
+
+        // Kullanıcının ID'sini token'dan al
+        private int GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return int.Parse(userIdClaim!);
+        }
+
+        // Tüm toplantıları listele (sadece kendi toplantıları)
+        [HttpGet]
+        public async Task<ActionResult<MeetingListResponse>> GetMeetings()
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                
+                var meetings = await _context.Meetings
+                    .Include(m => m.User)
+                    .Where(m => m.UserId == userId)
+                    .OrderByDescending(m => m.CreatedAt)
+                    .Select(m => new MeetingResponseDto
+                    {
+                        Id = m.Id,
+                        Title = m.Title,
+                        Description = m.Description,
+                        StartDate = m.StartDate,
+                        EndDate = m.EndDate,
+                        DocumentPath = m.DocumentPath,
+                        IsCancelled = m.IsCancelled,
+                        CancelledAt = m.CancelledAt,
+                        CreatedAt = m.CreatedAt,
+                        UpdatedAt = m.UpdatedAt,
+                        UserId = m.UserId,
+                        UserName = $"{m.User.FirstName} {m.User.LastName}",
+                        UserEmail = m.User.Email
+                    })
+                    .ToListAsync();
+
+                return Ok(new MeetingListResponse
+                {
+                    Success = true,
+                    Message = "Toplantılar başarıyla getirildi",
+                    Data = meetings,
+                    TotalCount = meetings.Count
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new MeetingListResponse
+                {
+                    Success = false,
+                    Message = "Toplantılar getirilirken hata oluştu",
+                    Data = new List<MeetingResponseDto>()
+                });
+            }
+        }
+
+        // ID'ye göre toplantı getir
+        [HttpGet("{id}")]
+        public async Task<ActionResult<MeetingApiResponse>> GetMeeting(int id)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                
+                var meeting = await _context.Meetings
+                    .Include(m => m.User)
+                    .FirstOrDefaultAsync(m => m.Id == id && m.UserId == userId);
+
+                if (meeting == null)
+                {
+                    return NotFound(new MeetingApiResponse
+                    {
+                        Success = false,
+                        Message = "Toplantı bulunamadı"
+                    });
+                }
+
+                var meetingDto = new MeetingResponseDto
+                {
+                    Id = meeting.Id,
+                    Title = meeting.Title,
+                    Description = meeting.Description,
+                    StartDate = meeting.StartDate,
+                    EndDate = meeting.EndDate,
+                    DocumentPath = meeting.DocumentPath,
+                    IsCancelled = meeting.IsCancelled,
+                    CancelledAt = meeting.CancelledAt,
+                    CreatedAt = meeting.CreatedAt,
+                    UpdatedAt = meeting.UpdatedAt,
+                    UserId = meeting.UserId,
+                    UserName = $"{meeting.User.FirstName} {meeting.User.LastName}",
+                    UserEmail = meeting.User.Email
+                };
+
+                return Ok(new MeetingApiResponse
+                {
+                    Success = true,
+                    Message = "Toplantı başarıyla getirildi",
+                    Data = meetingDto
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new MeetingApiResponse
+                {
+                    Success = false,
+                    Message = "Toplantı getirilirken hata oluştu"
+                });
+            }
+        }
+
+        // Yeni toplantı oluştur
+        [HttpPost]
+        public async Task<ActionResult<MeetingApiResponse>> CreateMeeting(CreateMeetingDto createMeetingDto)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+
+                // Tarih kontrolü
+                if (createMeetingDto.StartDate >= createMeetingDto.EndDate)
+                {
+                    return BadRequest(new MeetingApiResponse
+                    {
+                        Success = false,
+                        Message = "Başlangıç tarihi bitiş tarihinden önce olmalıdır"
+                    });
+                }
+
+                if (createMeetingDto.StartDate < DateTime.Now)
+                {
+                    return BadRequest(new MeetingApiResponse
+                    {
+                        Success = false,
+                        Message = "Geçmiş tarihte toplantı oluşturamazsınız"
+                    });
+                }
+
+                var meeting = new Meeting
+                {
+                    Title = createMeetingDto.Title,
+                    Description = createMeetingDto.Description,
+                    StartDate = createMeetingDto.StartDate,
+                    EndDate = createMeetingDto.EndDate,
+                    DocumentPath = createMeetingDto.DocumentPath,
+                    UserId = userId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    IsCancelled = false
+                };
+
+                _context.Meetings.Add(meeting);
+                await _context.SaveChangesAsync();
+
+                // Oluşturulan toplantıyı kullanıcı bilgileriyle birlikte getir
+                var createdMeeting = await _context.Meetings
+                    .Include(m => m.User)
+                    .FirstOrDefaultAsync(m => m.Id == meeting.Id);
+
+                var meetingDto = new MeetingResponseDto
+                {
+                    Id = createdMeeting.Id,
+                    Title = createdMeeting.Title,
+                    Description = createdMeeting.Description,
+                    StartDate = createdMeeting.StartDate,
+                    EndDate = createdMeeting.EndDate,
+                    DocumentPath = createdMeeting.DocumentPath,
+                    IsCancelled = createdMeeting.IsCancelled,
+                    CancelledAt = createdMeeting.CancelledAt,
+                    CreatedAt = createdMeeting.CreatedAt,
+                    UpdatedAt = createdMeeting.UpdatedAt,
+                    UserId = createdMeeting.UserId,
+                    UserName = $"{createdMeeting.User.FirstName} {createdMeeting.User.LastName}",
+                    UserEmail = createdMeeting.User.Email
+                };
+
+                return CreatedAtAction(nameof(GetMeeting), new { id = meeting.Id }, new MeetingApiResponse
+                {
+                    Success = true,
+                    Message = "Toplantı başarıyla oluşturuldu",
+                    Data = meetingDto
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new MeetingApiResponse
+                {
+                    Success = false,
+                    Message = "Toplantı oluşturulurken hata oluştu"
+                });
+            }
+        }
+
+        // Toplantı güncelle
+        [HttpPut("{id}")]
+        public async Task<ActionResult<MeetingApiResponse>> UpdateMeeting(int id, UpdateMeetingDto updateMeetingDto)
+        {
+            try
+            {
+                if (id != updateMeetingDto.Id)
+                {
+                    return BadRequest(new MeetingApiResponse
+                    {
+                        Success = false,
+                        Message = "ID uyuşmazlığı"
+                    });
+                }
+
+                var userId = GetCurrentUserId();
+                
+                var meeting = await _context.Meetings
+                    .FirstOrDefaultAsync(m => m.Id == id && m.UserId == userId);
+
+                if (meeting == null)
+                {
+                    return NotFound(new MeetingApiResponse
+                    {
+                        Success = false,
+                        Message = "Toplantı bulunamadı"
+                    });
+                }
+
+                // İptal edilmiş toplantı güncellenemez
+                if (meeting.IsCancelled)
+                {
+                    return BadRequest(new MeetingApiResponse
+                    {
+                        Success = false,
+                        Message = "İptal edilmiş toplantı güncellenemez"
+                    });
+                }
+
+                // Tarih kontrolü
+                if (updateMeetingDto.StartDate >= updateMeetingDto.EndDate)
+                {
+                    return BadRequest(new MeetingApiResponse
+                    {
+                        Success = false,
+                        Message = "Başlangıç tarihi bitiş tarihinden önce olmalıdır"
+                    });
+                }
+
+                // Güncelleme
+                meeting.Title = updateMeetingDto.Title;
+                meeting.Description = updateMeetingDto.Description;
+                meeting.StartDate = updateMeetingDto.StartDate;
+                meeting.EndDate = updateMeetingDto.EndDate;
+                meeting.DocumentPath = updateMeetingDto.DocumentPath;
+                meeting.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                // Güncellenmiş toplantıyı kullanıcı bilgileriyle birlikte getir
+                var updatedMeeting = await _context.Meetings
+                    .Include(m => m.User)
+                    .FirstOrDefaultAsync(m => m.Id == meeting.Id);
+
+                var meetingDto = new MeetingResponseDto
+                {
+                    Id = updatedMeeting.Id,
+                    Title = updatedMeeting.Title,
+                    Description = updatedMeeting.Description,
+                    StartDate = updatedMeeting.StartDate,
+                    EndDate = updatedMeeting.EndDate,
+                    DocumentPath = updatedMeeting.DocumentPath,
+                    IsCancelled = updatedMeeting.IsCancelled,
+                    CancelledAt = updatedMeeting.CancelledAt,
+                    CreatedAt = updatedMeeting.CreatedAt,
+                    UpdatedAt = updatedMeeting.UpdatedAt,
+                    UserId = updatedMeeting.UserId,
+                    UserName = $"{updatedMeeting.User.FirstName} {updatedMeeting.User.LastName}",
+                    UserEmail = updatedMeeting.User.Email
+                };
+
+                return Ok(new MeetingApiResponse
+                {
+                    Success = true,
+                    Message = "Toplantı başarıyla güncellendi",
+                    Data = meetingDto
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new MeetingApiResponse
+                {
+                    Success = false,
+                    Message = "Toplantı güncellenirken hata oluştu"
+                });
+            }
+        }
+
+        // Toplantıyı iptal et (soft delete)
+        [HttpPatch("{id}/cancel")]
+        public async Task<ActionResult<MeetingApiResponse>> CancelMeeting(int id)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                
+                var meeting = await _context.Meetings
+                    .Include(m => m.User)
+                    .FirstOrDefaultAsync(m => m.Id == id && m.UserId == userId);
+
+                if (meeting == null)
+                {
+                    return NotFound(new MeetingApiResponse
+                    {
+                        Success = false,
+                        Message = "Toplantı bulunamadı"
+                    });
+                }
+
+                if (meeting.IsCancelled)
+                {
+                    return BadRequest(new MeetingApiResponse
+                    {
+                        Success = false,
+                        Message = "Toplantı zaten iptal edilmiş"
+                    });
+                }
+
+                // Toplantıyı iptal et
+                meeting.IsCancelled = true;
+                meeting.CancelledAt = DateTime.UtcNow;
+                meeting.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                var meetingDto = new MeetingResponseDto
+                {
+                    Id = meeting.Id,
+                    Title = meeting.Title,
+                    Description = meeting.Description,
+                    StartDate = meeting.StartDate,
+                    EndDate = meeting.EndDate,
+                    DocumentPath = meeting.DocumentPath,
+                    IsCancelled = meeting.IsCancelled,
+                    CancelledAt = meeting.CancelledAt,
+                    CreatedAt = meeting.CreatedAt,
+                    UpdatedAt = meeting.UpdatedAt,
+                    UserId = meeting.UserId,
+                    UserName = $"{meeting.User.FirstName} {meeting.User.LastName}",
+                    UserEmail = meeting.User.Email
+                };
+
+                return Ok(new MeetingApiResponse
+                {
+                    Success = true,
+                    Message = "Toplantı başarıyla iptal edildi",
+                    Data = meetingDto
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new MeetingApiResponse
+                {
+                    Success = false,
+                    Message = "Toplantı iptal edilirken hata oluştu"
+                });
+            }
+        }
+
+        // Toplantıyı kalıcı olarak sil (hard delete)
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<MeetingApiResponse>> DeleteMeeting(int id)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                
+                var meeting = await _context.Meetings
+                    .FirstOrDefaultAsync(m => m.Id == id && m.UserId == userId);
+
+                if (meeting == null)
+                {
+                    return NotFound(new MeetingApiResponse
+                    {
+                        Success = false,
+                        Message = "Toplantı bulunamadı"
+                    });
+                }
+
+                _context.Meetings.Remove(meeting);
+                await _context.SaveChangesAsync();
+
+                return Ok(new MeetingApiResponse
+                {
+                    Success = true,
+                    Message = "Toplantı başarıyla silindi"
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new MeetingApiResponse
+                {
+                    Success = false,
+                    Message = "Toplantı silinirken hata oluştu"
+                });
+            }
+        }
+    }
+}
