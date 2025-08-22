@@ -29,8 +29,8 @@ namespace MeetingManagement.Data
                 entity.Property(e => e.Phone).IsRequired().HasMaxLength(20);
                 entity.Property(e => e.PasswordHash).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.ProfileImagePath).HasMaxLength(255);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
-                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("datetime('now')");
             });
 
             // Meeting configuration
@@ -40,8 +40,8 @@ namespace MeetingManagement.Data
                 entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
                 entity.Property(e => e.Description).HasMaxLength(1000);
                 entity.Property(e => e.DocumentPath).HasMaxLength(255);
-                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
-                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("datetime('now')");
                 
                 entity.HasOne(e => e.User)
                     .WithMany(e => e.Meetings)
@@ -58,7 +58,7 @@ namespace MeetingManagement.Data
                 entity.Property(e => e.DocumentPath).HasMaxLength(255);
                 entity.Property(e => e.Operation).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.LoggedBy).HasMaxLength(100);
-                entity.Property(e => e.LoggedAt).HasDefaultValueSql("GETUTCDATE()");
+                entity.Property(e => e.LoggedAt).HasDefaultValueSql("datetime('now')");
             });
         }
     }
