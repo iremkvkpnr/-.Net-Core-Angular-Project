@@ -126,9 +126,14 @@ namespace MeetingManagement.Business.Services
             {
                 using var client = new SmtpClient(_smtpServer, _smtpPort)
                 {
-                    Credentials = new NetworkCredential(_smtpUsername, _smtpPassword),
-                    EnableSsl = true
+                    EnableSsl = _smtpPort == 587 || _smtpPort == 465
                 };
+
+                // Only set credentials if username and password are provided
+                if (!string.IsNullOrEmpty(_smtpUsername) && !string.IsNullOrEmpty(_smtpPassword))
+                {
+                    client.Credentials = new NetworkCredential(_smtpUsername, _smtpPassword);
+                }
 
                 var mailMessage = new MailMessage
                 {
