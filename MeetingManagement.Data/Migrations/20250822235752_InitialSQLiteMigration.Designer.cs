@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MeetingManagement.Data.Migrations
 {
     [DbContext(typeof(MeetingManagementDbContext))]
-    [Migration("20250822195904_UpdateToSQLite")]
-    partial class UpdateToSQLite
+    [Migration("20250822235752_InitialSQLiteMigration")]
+    partial class InitialSQLiteMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
