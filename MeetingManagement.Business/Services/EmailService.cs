@@ -118,6 +118,37 @@ namespace MeetingManagement.Business.Services
         }
 
         /// <summary>
+        /// Toplantı güncelleme bilgilendirme emaili gönderir
+        /// </summary>
+        public async Task SendMeetingUpdateEmailAsync(string toEmail, string meetingTitle, string meetingDescription, DateTime startDate, DateTime endDate, string updateReason = "Belirtilmemiş")
+        {
+            var subject = $"Toplantı Güncellendi: {meetingTitle}";
+            var body = $@"
+                <html>
+                <body style='font-family: Arial, sans-serif;'>
+                    <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
+                        <h2 style='color: #ff9800;'>Toplantı Güncelleme Bildirimi</h2>
+                        <div style='background-color: #fff3e0; padding: 20px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #ff9800;'>
+                            <h3 style='color: #ff9800; margin-top: 0;'>{meetingTitle}</h3>
+                            <p style='color: #424242;'><strong>Durum:</strong> Güncellendi</p>
+                            <p style='color: #424242;'><strong>Güncelleme Nedeni:</strong> {updateReason}</p>
+                            <hr style='border: none; border-top: 1px solid #ffcc02; margin: 15px 0;'>
+                            <p style='color: #424242;'><strong>Açıklama:</strong> {meetingDescription}</p>
+                            <p style='color: #424242;'><strong>Yeni Başlangıç:</strong> {startDate:dd.MM.yyyy HH:mm}</p>
+                            <p style='color: #424242;'><strong>Yeni Bitiş:</strong> {endDate:dd.MM.yyyy HH:mm}</p>
+                            <p style='color: #424242;'><strong>Süre:</strong> {(endDate - startDate).TotalMinutes} dakika</p>
+                        </div>
+                        <p>Lütfen güncellenmiş toplantı saatinizi not alın ve zamanında katılım sağlayın.</p>
+                        <hr style='border: none; border-top: 1px solid #dee2e6; margin: 30px 0;'>
+                        <p style='color: #6c757d; font-size: 12px;'>Bu email otomatik olarak gönderilmiştir.</p>
+                    </div>
+                </body>
+                </html>";
+
+            await SendEmailAsync(toEmail, subject, body);
+        }
+
+        /// <summary>
         /// Email gönderme işlemini gerçekleştirir
         /// </summary>
         private async Task SendEmailAsync(string toEmail, string subject, string body)

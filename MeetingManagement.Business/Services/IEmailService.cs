@@ -28,6 +28,18 @@ namespace MeetingManagement.Business.Services
         Task SendMeetingNotificationEmailAsync(string toEmail, string meetingTitle, string meetingDescription, DateTime startDate, DateTime endDate);
 
         /// <summary>
+        /// Toplantı güncelleme bilgilendirme emaili gönderir
+        /// </summary>
+        /// <param name="toEmail">Alıcı email adresi</param>
+        /// <param name="meetingTitle">Toplantı başlığı</param>
+        /// <param name="meetingDescription">Toplantı açıklaması</param>
+        /// <param name="startDate">Başlangıç tarihi</param>
+        /// <param name="endDate">Bitiş tarihi</param>
+        /// <param name="updateReason">Güncelleme nedeni</param>
+        /// <returns></returns>
+        Task SendMeetingUpdateEmailAsync(string toEmail, string meetingTitle, string meetingDescription, DateTime startDate, DateTime endDate, string updateReason = "Belirtilmemiş");
+
+        /// <summary>
         /// Toplantı iptal bilgilendirme emaili gönderir
         /// </summary>
         /// <param name="toEmail">Alıcı email adresi</param>

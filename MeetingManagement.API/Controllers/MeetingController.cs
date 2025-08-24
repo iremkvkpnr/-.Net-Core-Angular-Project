@@ -323,6 +323,23 @@ namespace MeetingManagement.API.Controllers
                     .Include(m => m.User)
                     .FirstOrDefaultAsync(m => m.Id == meeting.Id);
 
+                // Toplantı güncelleme emaili gönder
+                try
+                {
+                    await _emailService.SendMeetingUpdateEmailAsync(
+                        updatedMeeting.User.Email,
+                        updatedMeeting.Title,
+                        updatedMeeting.Description,
+                        updatedMeeting.StartDate,
+                        updatedMeeting.EndDate,
+                        "Toplantı detayları güncellendi");
+                }
+                catch (Exception emailEx)
+                {
+                    // Email gönderme hatası güncelleme işlemini etkilemesin, sadece log'la
+                    Console.WriteLine($"Toplantı güncelleme emaili gönderilemedi: {emailEx.Message}");
+                }
+
                 var meetingDto = new MeetingResponseDto
                 {
                     Id = updatedMeeting.Id,
@@ -393,6 +410,20 @@ namespace MeetingManagement.API.Controllers
                 meeting.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
+
+                // Toplantı iptal emaili gönder
+                try
+                {
+                    await _emailService.SendMeetingCancellationEmailAsync(
+                        meeting.User.Email,
+                        meeting.Title,
+                        "Kullanıcı tarafından iptal edildi");
+                }
+                catch (Exception emailEx)
+                {
+                    // Email gönderme hatası iptal işlemini etkilemesin, sadece log'la
+                    Console.WriteLine($"Toplantı iptal emaili gönderilemedi: {emailEx.Message}");
+                }
 
                 var meetingDto = new MeetingResponseDto
                 {
