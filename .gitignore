@@ -494,8 +494,5 @@ node_modules/
 *.db-shm
 *.db-wal
 
-# Docker
-Dockerfile
-
 # Frontend project (separate repository)
 meeting-management-frontend/
