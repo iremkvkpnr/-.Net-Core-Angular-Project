@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MeetingManagement.Business.Services;
@@ -29,7 +30,11 @@ namespace MeetingManagement.API.Controllers
         private int GetCurrentUserId()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return int.Parse(userIdClaim!);
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                throw new UnauthorizedAccessException("User ID not found in token");
+            }
+            return int.Parse(userIdClaim);
         }
 
         // Tüm toplantıları listele (sadece kendi toplantıları)
@@ -51,6 +56,7 @@ namespace MeetingManagement.API.Controllers
                         Description = m.Description,
                         StartDate = m.StartDate,
                         EndDate = m.EndDate,
+                        Location = m.Location,
                         DocumentPath = m.DocumentPath,
                         IsCancelled = m.IsCancelled,
                         CancelledAt = m.CancelledAt,
@@ -109,6 +115,7 @@ namespace MeetingManagement.API.Controllers
                     Description = meeting.Description,
                     StartDate = meeting.StartDate,
                     EndDate = meeting.EndDate,
+                    Location = meeting.Location,
                     DocumentPath = meeting.DocumentPath,
                     IsCancelled = meeting.IsCancelled,
                     CancelledAt = meeting.CancelledAt,
@@ -163,7 +170,7 @@ namespace MeetingManagement.API.Controllers
 
         // Yeni toplantı oluştur
         [HttpPost]
-        public async Task<ActionResult<MeetingApiResponse>> CreateMeeting(CreateMeetingDto createMeetingDto)
+        public async Task<ActionResult<MeetingApiResponse>> CreateMeeting([FromForm] CreateMeetingDto createMeetingDto, IFormFile? document = null)
         {
             try
             {
@@ -179,7 +186,7 @@ namespace MeetingManagement.API.Controllers
                     });
                 }
 
-                if (createMeetingDto.StartDate < DateTime.Now)
+                if (createMeetingDto.StartDate < DateTime.UtcNow)
                 {
                     return BadRequest(new MeetingApiResponse
                     {
@@ -188,13 +195,33 @@ namespace MeetingManagement.API.Controllers
                     });
                 }
 
+                string? documentPath = null;
+                
+                // Dosya yükleme işlemi
+                if (document != null && document.Length > 0)
+                {
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "uploads", "documents");
+                    Directory.CreateDirectory(uploadsFolder);
+                    
+                    var fileName = $"{Guid.NewGuid()}_{document.FileName}";
+                    var filePath = Path.Combine(uploadsFolder, fileName);
+                    
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await document.CopyToAsync(stream);
+                    }
+                    
+                    documentPath = $"uploads/documents/{fileName}";
+                }
+
                 var meeting = new Meeting
                 {
                     Title = createMeetingDto.Title,
                     Description = createMeetingDto.Description,
                     StartDate = createMeetingDto.StartDate,
                     EndDate = createMeetingDto.EndDate,
-                    DocumentPath = createMeetingDto.DocumentPath,
+                    Location = createMeetingDto.Location,
+                    DocumentPath = documentPath,
                     UserId = userId,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
@@ -216,6 +243,7 @@ namespace MeetingManagement.API.Controllers
                     Description = createdMeeting.Description,
                     StartDate = createdMeeting.StartDate,
                     EndDate = createdMeeting.EndDate,
+                    Location = createdMeeting.Location,
                     DocumentPath = createdMeeting.DocumentPath,
                     IsCancelled = createdMeeting.IsCancelled,
                     CancelledAt = createdMeeting.CancelledAt,
@@ -261,18 +289,10 @@ namespace MeetingManagement.API.Controllers
 
         // Toplantı güncelle
         [HttpPut("{id}")]
-        public async Task<ActionResult<MeetingApiResponse>> UpdateMeeting(int id, UpdateMeetingDto updateMeetingDto)
+        public async Task<ActionResult<MeetingApiResponse>> UpdateMeeting(int id, [FromForm] UpdateMeetingDto updateMeetingDto, IFormFile? document = null)
         {
             try
             {
-                if (id != updateMeetingDto.Id)
-                {
-                    return BadRequest(new MeetingApiResponse
-                    {
-                        Success = false,
-                        Message = "ID uyuşmazlığı"
-                    });
-                }
 
                 var userId = GetCurrentUserId();
                 
@@ -308,12 +328,39 @@ namespace MeetingManagement.API.Controllers
                     });
                 }
 
+                // Dosya yükleme işlemi (varsa)
+                if (document != null && document.Length > 0)
+                {
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "uploads", "documents");
+                    Directory.CreateDirectory(uploadsFolder);
+                    
+                    var fileName = $"{Guid.NewGuid()}_{document.FileName}";
+                    var filePath = Path.Combine(uploadsFolder, fileName);
+                    
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await document.CopyToAsync(stream);
+                    }
+                    
+                    // Eski dosyayı sil (varsa)
+                    if (!string.IsNullOrEmpty(meeting.DocumentPath))
+                    {
+                        var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), meeting.DocumentPath);
+                        if (System.IO.File.Exists(oldFilePath))
+                        {
+                            System.IO.File.Delete(oldFilePath);
+                        }
+                    }
+                    
+                    meeting.DocumentPath = $"uploads/documents/{fileName}";
+                }
+
                 // Güncelleme
                 meeting.Title = updateMeetingDto.Title;
                 meeting.Description = updateMeetingDto.Description;
                 meeting.StartDate = updateMeetingDto.StartDate;
                 meeting.EndDate = updateMeetingDto.EndDate;
-                meeting.DocumentPath = updateMeetingDto.DocumentPath;
+                meeting.Location = updateMeetingDto.Location;
                 meeting.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
@@ -347,6 +394,7 @@ namespace MeetingManagement.API.Controllers
                     Description = updatedMeeting.Description,
                     StartDate = updatedMeeting.StartDate,
                     EndDate = updatedMeeting.EndDate,
+                    Location = updatedMeeting.Location,
                     DocumentPath = updatedMeeting.DocumentPath,
                     IsCancelled = updatedMeeting.IsCancelled,
                     CancelledAt = updatedMeeting.CancelledAt,
@@ -432,6 +480,7 @@ namespace MeetingManagement.API.Controllers
                     Description = meeting.Description,
                     StartDate = meeting.StartDate,
                     EndDate = meeting.EndDate,
+                    Location = meeting.Location,
                     DocumentPath = meeting.DocumentPath,
                     IsCancelled = meeting.IsCancelled,
                     CancelledAt = meeting.CancelledAt,

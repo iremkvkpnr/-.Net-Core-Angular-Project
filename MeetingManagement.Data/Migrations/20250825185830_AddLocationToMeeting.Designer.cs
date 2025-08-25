@@ -4,6 +4,7 @@ using MeetingManagement.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MeetingManagement.Data.Migrations
 {
     [DbContext(typeof(MeetingManagementDbContext))]
-    partial class MeetingManagementDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250825185830_AddLocationToMeeting")]
+    partial class AddLocationToMeeting
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

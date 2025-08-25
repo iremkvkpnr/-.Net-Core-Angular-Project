@@ -21,6 +21,9 @@ namespace MeetingManagement.Models
         [Required]
         public DateTime EndDate { get; set; }
 
+        [StringLength(200)]
+        public string? Location { get; set; }
+
         [StringLength(255)]
         public string? DocumentPath { get; set; }
 

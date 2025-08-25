@@ -1,29 +1,32 @@
 using System;
-using System.Security.Cryptography;
-using System.Text;
 using MeetingManagement.Business.Services;
+using BCrypt.Net;
 
 namespace MeetingManagement.Business.Services
 {
     // Şifre şifreleme ve doğrulama işlemleri için servis
     public class PasswordService : IPasswordService
     {
-        // Şifreyi SHA256 ile şifrele
+        // Şifreyi BCrypt ile şifrele (güvenli salt ile)
         public string HashPassword(string password)
         {
-            using (var sha256 = SHA256.Create())
-            {
-                // Şifreyi byte dizisine çevir ve hash'le
-                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-                return Convert.ToBase64String(hashedBytes);
-            }
+            // BCrypt ile şifreyi hash'le (otomatik salt oluşturur)
+            return BCrypt.Net.BCrypt.HashPassword(password, BCrypt.Net.BCrypt.GenerateSalt(12));
         }
 
         // Girilen şifre ile kayıtlı şifreyi karşılaştır
         public bool VerifyPassword(string password, string hashedPassword)
         {
-            var hashOfInput = HashPassword(password);
-            return hashOfInput.Equals(hashedPassword);
+            try
+            {
+                // BCrypt ile şifre doğrulaması
+                return BCrypt.Net.BCrypt.Verify(password, hashedPassword);
+            }
+            catch
+            {
+                // Hatalı hash formatı durumunda false döndür
+                return false;
+            }
         }
     }
 }

@@ -5,15 +5,13 @@ namespace MeetingManagement.Models.DTOs
     // Toplantı güncellemek için gerekli bilgiler
     public class UpdateMeetingDto
     {
-        [Required(ErrorMessage = "Toplantı ID gereklidir")]
-        public int Id { get; set; }
 
         [Required(ErrorMessage = "Toplantı başlığı gereklidir")]
         [StringLength(200, ErrorMessage = "Başlık en fazla 200 karakter olabilir")]
-        public string Title { get; set; }
+        public string? Title { get; set; }
 
         [StringLength(1000, ErrorMessage = "Açıklama en fazla 1000 karakter olabilir")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [Required(ErrorMessage = "Başlangıç tarihi gereklidir")]
         public DateTime StartDate { get; set; }
@@ -21,7 +19,7 @@ namespace MeetingManagement.Models.DTOs
         [Required(ErrorMessage = "Bitiş tarihi gereklidir")]
         public DateTime EndDate { get; set; }
 
-        // Dosya yolu opsiyonel
-        public string DocumentPath { get; set; }
+        [StringLength(200, ErrorMessage = "Konum en fazla 200 karakter olabilir")]
+        public string? Location { get; set; }
     }
 }
