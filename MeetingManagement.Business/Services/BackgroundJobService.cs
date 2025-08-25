@@ -70,7 +70,6 @@ namespace MeetingManagement.Business.Services
         {
             try
             {
-                // Belirtilen süre sonra belirli toplantıyı sil
                 BackgroundJob.Schedule(
                     () => DeleteSpecificMeetingAsync(meetingId),
                     TimeSpan.FromMinutes(delayInMinutes));
@@ -92,6 +91,31 @@ namespace MeetingManagement.Business.Services
 
                 if (meeting != null)
                 {
+                    try
+                    {
+                        var meetingLog = new MeetingManagement.Models.MeetingLog
+                        {
+                            MeetingId = meeting.Id,
+                            Title = meeting.Title,
+                            Description = meeting.Description,
+                            StartDate = meeting.StartDate,
+                            EndDate = meeting.EndDate,
+                            DocumentPath = meeting.DocumentPath,
+                            UserId = meeting.UserId,
+                            Operation = "DELETE",
+                            LoggedAt = DateTime.UtcNow,
+                            LoggedBy = "BackgroundJobService"
+                        };
+                        
+                        _context.MeetingLogs.Add(meetingLog);
+                        await _context.SaveChangesAsync();
+                    }
+                    catch (Exception logEx)
+                    {
+                        _logger.LogWarning(logEx, $"Toplantı ID {meetingId} için log kaydı oluşturulamadı, ancak silme işlemi devam edecek.");
+                    }
+                    
+
                     _context.Meetings.Remove(meeting);
                     await _context.SaveChangesAsync();
                     
@@ -105,7 +129,6 @@ namespace MeetingManagement.Business.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Toplantı ID {meetingId} silinirken hata oluştu.");
-                throw;
             }
         }
     }

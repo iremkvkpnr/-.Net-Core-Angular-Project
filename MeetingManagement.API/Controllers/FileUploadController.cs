@@ -251,7 +251,7 @@ namespace MeetingManagement.API.Controllers
                 // Dosya var mı kontrol et
                 if (!System.IO.File.Exists(filePath))
                 {
-                    return NotFound();
+                    return NotFound(new { Success = false, Message = "Dosya bulunamadı" });
                 }
                 
                 // Erişim kontrolü
@@ -260,17 +260,23 @@ namespace MeetingManagement.API.Controllers
                      return StatusCode(403, new { Success = false, Message = "Bu dosyaya erişim yetkiniz yok" });
                  }
                 
-                // Sadece resim dosyaları için önizleme
+                // Dosya uzantısını kontrol et
                 var extension = Path.GetExtension(fileName).ToLowerInvariant();
-                if (!_allowedImageExtensions.Contains(extension))
+                
+                // Resim dosyaları için önizleme
+                if (_allowedImageExtensions.Contains(extension))
                 {
-                    return BadRequest(new { Success = false, Message = "Bu dosya türü için önizleme desteklenmiyor" });
+                    var fileBytes = System.IO.File.ReadAllBytes(filePath);
+                    var contentType = GetContentType(fileName);
+                    return File(fileBytes, contentType);
                 }
                 
-                var fileBytes = System.IO.File.ReadAllBytes(filePath);
-                var contentType = GetContentType(fileName);
-                
-                return File(fileBytes, contentType);
+                // Resim olmayan dosyalar için hata mesajı
+                return BadRequest(new { 
+                    Success = false, 
+                    Message = "Bu dosya türü için önizleme desteklenmiyor. Sadece resim dosyaları (.jpg, .jpeg, .png, .gif) önizlenebilir.",
+                    SupportedTypes = string.Join(", ", _allowedImageExtensions)
+                });
             }
             catch (Exception ex)
             {

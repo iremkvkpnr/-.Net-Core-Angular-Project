@@ -253,7 +253,7 @@ namespace MeetingManagement.API.Controllers
         // Kullanıcı profil bilgilerini güncelle
         [HttpPut("profile")]
         [Authorize]
-        public async Task<ActionResult<UserDto>> UpdateProfile([FromForm] RegisterDto updateDto, IFormFile? profileImage = null)
+        public async Task<ActionResult<UserDto>> UpdateProfile([FromForm] UpdateProfileDto updateDto, IFormFile? profileImage = null)
         {
             try
             {
