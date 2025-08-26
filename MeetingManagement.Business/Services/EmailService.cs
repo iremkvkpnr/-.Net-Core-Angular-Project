@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
@@ -12,6 +13,7 @@ namespace MeetingManagement.Business.Services
     public class EmailService : IEmailService
     {
         private readonly IConfiguration _configuration;
+        private readonly ILogger<EmailService> _logger;
         private readonly string _smtpServer;
         private readonly int _smtpPort;
         private readonly string _smtpUsername;
@@ -19,15 +21,23 @@ namespace MeetingManagement.Business.Services
         private readonly string _fromEmail;
         private readonly string _fromName;
 
-        public EmailService(IConfiguration configuration)
+        public EmailService(IConfiguration configuration, ILogger<EmailService> logger)
         {
             _configuration = configuration;
+            _logger = logger;
             _smtpServer = _configuration["EmailSettings:SmtpServer"] ?? "smtp.gmail.com";
             _smtpPort = int.Parse(_configuration["EmailSettings:SmtpPort"] ?? "587");
             _smtpUsername = _configuration["EmailSettings:SmtpUsername"] ?? "";
             _smtpPassword = _configuration["EmailSettings:SmtpPassword"] ?? "";
             _fromEmail = _configuration["EmailSettings:FromEmail"] ?? "noreply@meetingmanagement.com";
             _fromName = _configuration["EmailSettings:FromName"] ?? "Meeting Management System";
+            
+            // Debug: Configuration değerlerini logla
+            _logger.LogInformation($"EmailService Constructor - SmtpServer: {_smtpServer}");
+            _logger.LogInformation($"EmailService Constructor - SmtpPort: {_smtpPort}");
+            _logger.LogInformation($"EmailService Constructor - SmtpUsername: {_smtpUsername}");
+            _logger.LogInformation($"EmailService Constructor - SmtpPassword: {(string.IsNullOrEmpty(_smtpPassword) ? "BOŞ" : "DOLU")}");
+            _logger.LogInformation($"EmailService Constructor - FromEmail: {_fromEmail}");
         }
 
         /// <summary>
@@ -155,6 +165,9 @@ namespace MeetingManagement.Business.Services
         {
             try
             {
+                _logger.LogInformation($"Email gönderme başlatılıyor - To: {toEmail}, Subject: {subject}");
+                _logger.LogDebug($"SMTP Ayarları - Server: {_smtpServer}, Port: {_smtpPort}, Username: {_smtpUsername}");
+                
                 using var client = new SmtpClient(_smtpServer, _smtpPort)
                 {
                     EnableSsl = _smtpPort == 587 || _smtpPort == 465
@@ -164,6 +177,11 @@ namespace MeetingManagement.Business.Services
                 if (!string.IsNullOrEmpty(_smtpUsername) && !string.IsNullOrEmpty(_smtpPassword))
                 {
                     client.Credentials = new NetworkCredential(_smtpUsername, _smtpPassword);
+                    _logger.LogDebug("SMTP credentials ayarlandı");
+                }
+                else
+                {
+                    _logger.LogWarning("SMTP credentials boş - email gönderilemeyebilir");
                 }
 
                 var mailMessage = new MailMessage
@@ -177,13 +195,14 @@ namespace MeetingManagement.Business.Services
                 };
 
                 mailMessage.To.Add(toEmail);
+                _logger.LogDebug($"Mail mesajı oluşturuldu - From: {_fromEmail}");
 
                 await client.SendMailAsync(mailMessage);
+                _logger.LogInformation($"Email başarıyla gönderildi - To: {toEmail}");
             }
             catch (Exception ex)
             {
-                // Log the error (in a real application, use a proper logging framework)
-                Console.WriteLine($"Email gönderme hatası: {ex.Message}");
+                _logger.LogError(ex, $"Email gönderme hatası - To: {toEmail}, Error: {ex.Message}");
                 throw new Exception($"Email gönderilemedi: {ex.Message}", ex);
             }
         }

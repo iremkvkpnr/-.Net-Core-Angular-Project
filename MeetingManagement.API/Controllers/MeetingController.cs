@@ -18,12 +18,14 @@ namespace MeetingManagement.API.Controllers
         private readonly MeetingManagementDbContext _context;
         private readonly IEmailService _emailService;
         private readonly IBackgroundJobService _backgroundJobService;
+        private readonly IWebHostEnvironment _environment;
 
-        public MeetingController(MeetingManagementDbContext context, IEmailService emailService, IBackgroundJobService backgroundJobService)
+        public MeetingController(MeetingManagementDbContext context, IEmailService emailService, IBackgroundJobService backgroundJobService, IWebHostEnvironment environment)
         {
             _context = context;
             _emailService = emailService;
             _backgroundJobService = backgroundJobService;
+            _environment = environment;
         }
 
         // Kullanıcının ID'sini token'dan al
@@ -126,31 +128,6 @@ namespace MeetingManagement.API.Controllers
                     UserEmail = meeting.User.Email
                 };
 
-                // Toplantı iptal bilgilendirme emaili gönder (async olarak, hata durumunda iptal işlemini etkilemesin)
-                try
-                {
-                    await _emailService.SendMeetingCancellationEmailAsync(
-                        meeting.User.Email,
-                        meeting.Title,
-                        "Kullanıcı tarafından iptal edildi");
-                }
-                catch (Exception emailEx)
-                {
-                    // Email gönderme hatası iptal işlemini etkilemesin, sadece log'la
-                    Console.WriteLine($"Toplantı iptal bilgilendirme emaili gönderilemedi: {emailEx.Message}");
-                }
-
-                // İptal edilen toplantıyı 30 dakika sonra silmek için background job başlat
-                try
-                {
-                    _backgroundJobService.ScheduleDeleteSpecificMeeting(meeting.Id, 30);
-                }
-                catch (Exception jobEx)
-                {
-                    // Background job hatası iptal işlemini etkilemesin, sadece log'la
-                    Console.WriteLine($"Background job başlatılamadı: {jobEx.Message}");
-                }
-
                 return Ok(new MeetingApiResponse
                 {
                     Success = true,
@@ -200,7 +177,7 @@ namespace MeetingManagement.API.Controllers
                 // Dosya yükleme işlemi
                 if (document != null && document.Length > 0)
                 {
-                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "uploads", "documents");
+                    var uploadsFolder = Path.Combine(_environment.WebRootPath ?? _environment.ContentRootPath, "uploads", "documents");
                     Directory.CreateDirectory(uploadsFolder);
                     
                     var fileName = $"{Guid.NewGuid()}_{document.FileName}";
@@ -331,7 +308,7 @@ namespace MeetingManagement.API.Controllers
                 // Dosya yükleme işlemi (varsa)
                 if (document != null && document.Length > 0)
                 {
-                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "uploads", "documents");
+                    var uploadsFolder = Path.Combine(_environment.WebRootPath ?? _environment.ContentRootPath, "uploads", "documents");
                     Directory.CreateDirectory(uploadsFolder);
                     
                     var fileName = $"{Guid.NewGuid()}_{document.FileName}";
@@ -345,7 +322,7 @@ namespace MeetingManagement.API.Controllers
                     // Eski dosyayı sil (varsa)
                     if (!string.IsNullOrEmpty(meeting.DocumentPath))
                     {
-                        var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), meeting.DocumentPath);
+                        var oldFilePath = Path.Combine(_environment.WebRootPath ?? _environment.ContentRootPath, meeting.DocumentPath);
                         if (System.IO.File.Exists(oldFilePath))
                         {
                             System.IO.File.Delete(oldFilePath);

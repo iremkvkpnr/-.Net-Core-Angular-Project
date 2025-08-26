@@ -16,17 +16,41 @@ namespace MeetingManagement.API.Controllers
         private readonly IPasswordService _passwordService;
         private readonly IJwtService _jwtService;
         private readonly IEmailService _emailService;
+        private readonly IWebHostEnvironment _environment;
+        private readonly ILogger<AuthController> _logger;
 
         public AuthController(
             MeetingManagementDbContext context,
             IPasswordService passwordService,
             IJwtService jwtService,
-            IEmailService emailService)
+            IEmailService emailService,
+            IWebHostEnvironment environment,
+            ILogger<AuthController> logger)
         {
             _context = context;
             _passwordService = passwordService;
             _jwtService = jwtService;
             _emailService = emailService;
+            _environment = environment;
+            _logger = logger;
+        }
+
+        // Email configuration test endpoint
+        [HttpGet("test-email-config")]
+        public async Task<IActionResult> TestEmailConfig()
+        {
+            try
+            {
+                _logger.LogInformation("Email configuration test başlatılıyor...");
+                // EmailService'i çağırarak constructor loglarını tetikle
+                await _emailService.SendWelcomeEmailAsync("test@example.com", "Test", "User");
+                return Ok("Email configuration test tamamlandı - logları kontrol edin");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Email configuration test hatası: {Message}", ex.Message);
+                return BadRequest($"Email test hatası: {ex.Message}");
+            }
         }
 
         // Kullanıcı kayıt işlemi
@@ -117,12 +141,14 @@ namespace MeetingManagement.API.Controllers
                 // Hoş geldiniz emaili gönder (async olarak, hata durumunda kayıt işlemini etkilemesin)
                 try
                 {
+                    _logger.LogInformation($"Hoş geldiniz emaili gönderiliyor: {user.Email}");
                     await _emailService.SendWelcomeEmailAsync(user.Email, user.FirstName, user.LastName);
+                    _logger.LogInformation($"Hoş geldiniz emaili başarıyla gönderildi: {user.Email}");
                 }
                 catch (Exception emailEx)
                 {
                     // Email gönderme hatası kayıt işlemini etkilemesin, sadece log'la
-                    Console.WriteLine($"Hoş geldiniz emaili gönderilemedi: {emailEx.Message}");
+                    _logger.LogError(emailEx, $"Hoş geldiniz emaili gönderilemedi: {user.Email} - {emailEx.Message}");
                 }
 
                 return Ok(new AuthResponseDto
@@ -304,7 +330,7 @@ namespace MeetingManagement.API.Controllers
                     // Eski dosyayı sil
                     if (!string.IsNullOrEmpty(user.ProfileImagePath))
                     {
-                        var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", user.ProfileImagePath.TrimStart('/'));
+                        var oldFilePath = Path.Combine(_environment.WebRootPath ?? _environment.ContentRootPath, user.ProfileImagePath.TrimStart('/'));
                         if (System.IO.File.Exists(oldFilePath))
                         {
                             System.IO.File.Delete(oldFilePath);
@@ -315,7 +341,7 @@ namespace MeetingManagement.API.Controllers
                     var fileName = $"profile_{DateTime.Now.Ticks}{extension}";
                     
                     // Uploads klasörünü oluştur
-                    var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "profiles");
+                    var uploadsPath = Path.Combine(_environment.WebRootPath ?? _environment.ContentRootPath, "uploads", "profiles");
                     Directory.CreateDirectory(uploadsPath);
                     
                     // Dosya yolunu oluştur
@@ -362,5 +388,28 @@ namespace MeetingManagement.API.Controllers
                 return StatusCode(500, "Profil güncellenirken hata oluştu");
             }
         }
+
+        [HttpPost("test-email")]
+        public async Task<IActionResult> TestEmail([FromBody] TestEmailDto testEmailDto)
+        {
+            try
+            {
+                await _emailService.SendWelcomeEmailAsync(
+                    testEmailDto.Email,
+                    "Test",
+                    "User");
+
+                return Ok(new { success = true, message = "Test email başarıyla gönderildi" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = $"Email gönderilemedi: {ex.Message}" });
+            }
+        }
+    }
+
+    public class TestEmailDto
+    {
+        public string Email { get; set; } = string.Empty;
     }
 }

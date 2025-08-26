@@ -166,9 +166,11 @@ namespace MeetingManagement.API.Controllers
         [HttpGet("download/{fileName}")]
         public async Task<IActionResult> DownloadFile(string fileName, [FromQuery] string type = "document")
         {
+            Console.WriteLine($"DownloadFile called - fileName: {fileName}, type: {type}");
             try
             {
                 var userId = GetCurrentUserId();
+                Console.WriteLine($"User ID: {userId}");
                 
                 // Dosya adı güvenlik kontrolü - path traversal saldırılarını önle
                 if (fileName.Contains("..") || fileName.Contains("/") || fileName.Contains("\\"))
@@ -428,8 +430,9 @@ namespace MeetingManagement.API.Controllers
                     if (meeting == null)
                         return false;
                     
-                    // Toplantı sahibi olmalı (şu an için sadece sahibi erişebilir)
-                    return meeting.UserId.ToString() == userId;
+                    // Toplantı sahibi olmalı
+                    var currentUserId = int.Parse(userId);
+                    return meeting.UserId == currentUserId;
                 }
                 
                 return false;

@@ -1,0 +1,39 @@
+<svg width="800" height="500" xmlns="http://www.w3.org/2000/svg">
+  <!-- Ana ekran arka planı -->
+  <rect width="800" height="500" fill="#f8f9fa"/>
+  
+  <!-- Üst navigasyon çubuğu -->
+  <rect x="0" y="0" width="800" height="60" fill="#4a90e2"/>
+  <text x="20" y="35" fill="white" font-family="Arial" font-size="16" font-weight="bold">Toplantı Yönetimi</text>
+  <text x="700" y="35" fill="white" font-family="Arial" font-size="14">Yeni Toplantı</text>
+  
+  <!-- Sayfa başlığı -->
+  <text x="20" y="100" fill="#333" font-family="Arial" font-size="24" font-weight="bold">Toplantılar</text>
+  
+  <!-- Tablo başlıkları -->
+  <rect x="20" y="120" width="760" height="40" fill="#e9ecef" stroke="#dee2e6"/>
+  <text x="40" y="145" fill="#495057" font-family="Arial" font-size="14" font-weight="bold">Başlık</text>
+  <text x="200" y="145" fill="#495057" font-family="Arial" font-size="14" font-weight="bold">Başlangıç</text>
+  <text x="350" y="145" fill="#495057" font-family="Arial" font-size="14" font-weight="bold">Bitiş</text>
+  <text x="500" y="145" fill="#495057" font-family="Arial" font-size="14" font-weight="bold">Katılımcı</text>
+  <text x="620" y="145" fill="#495057" font-family="Arial" font-size="14" font-weight="bold">Durum</text>
+  <text x="720" y="145" fill="#495057" font-family="Arial" font-size="14" font-weight="bold">İşlemler</text>
+  
+  <!-- Toplantı satırı -->
+  <rect x="20" y="160" width="760" height="50" fill="white" stroke="#dee2e6"/>
+  <text x="40" y="185" fill="#333" font-family="Arial" font-size="14">Proje Toplantısı</text>
+  <text x="200" y="185" fill="#333" font-family="Arial" font-size="12">28.01.2024 14:00</text>
+  <text x="350" y="185" fill="#333" font-family="Arial" font-size="12">28.01.2024 15:00</text>
+  <text x="500" y="185" fill="#333" font-family="Arial" font-size="12">5</text>
+  <text x="620" y="185" fill="#dc3545" font-family="Arial" font-size="12" font-weight="bold">İPTAL EDİLDİ</text>
+  
+  <!-- İşlem butonları -->
+  <rect x="720" y="170" width="25" height="20" fill="#17a2b8" rx="3"/>
+  <text x="727" y="183" fill="white" font-family="Arial" font-size="10">👁</text>
+  <rect x="750" y="170" width="25" height="20" fill="#dc3545" rx="3"/>
+  <text x="757" y="183" fill="white" font-family="Arial" font-size="10">🗑</text>
+  
+  <!-- Placeholder metin -->
+  <text x="400" y="300" fill="#6c757d" font-family="Arial" font-size="14" text-anchor="middle">Toplantılar Listesi Ekran Görüntüsü</text>
+  <text x="400" y="320" fill="#6c757d" font-family="Arial" font-size="12" text-anchor="middle">(Gerçek ekran görüntüsü ile değiştirilecek)</text>
+</svg>
