@@ -7,7 +7,7 @@ Bu proje, toplantı yönetimi için geliştirilmiş modern bir web uygulamasıd�
 ## 📸 Ekran Görüntüleri
 
 ### Meeting Management
-![Meeting Management](images/gif.gif)
+![Meeting Management](images/gif2.gif)
 
 ### Kullanıcı Kayıt Sayfası
 ![Kayıt Sayfası](images/kayıt.png)
