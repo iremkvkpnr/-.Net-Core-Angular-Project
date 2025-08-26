@@ -7,31 +7,31 @@ Bu proje, toplantı yönetimi için geliştirilmiş modern bir web uygulamasıd�
 ## 📸 Ekran Görüntüleri
 
 ### Kullanıcı Kayıt Sayfası
-![Kayıt Sayfası](images/register.png)
+![Kayıt Sayfası](images/kayıt.png)
 *Kullanıcılar ad, soyad, e-posta, telefon ve şifre bilgileriyle kayıt olabilir. Profil resmi yükleme özelliği mevcuttur.*
 
 ### Giriş Sayfası
-![Giriş Sayfası](images/login.png)
+![Giriş Sayfası](images/giris.png)
 *E-posta ve şifre ile güvenli giriş yapılabilir. "Hesabınız yok mu? Kayıt Ol" linki ile kayıt sayfasına yönlendirme.*
 
 ### Toplantı Oluşturma
-![Toplantı Oluşturma](images/create-meeting.png)
+![Toplantı Oluşturma](images/yeni_toplanti.png)
 *Yeni toplantı oluşturma formu. Başlık, açıklama, başlangıç/bitiş tarihleri, konum ve dosya ekleme özellikleri.*
 
 ### Toplantılar Sayfası
-![Toplantılar Listesi](images/meetings-list.png)
+![Toplantılar Listesi](images/toplantılar.png)
 *Tüm toplantıların listelendiği ana sayfa. Başlık, tarih, konum, durum ve işlem butonları görüntülenir.*
 
 ### Toplantı Detay Sayfası
-![Toplantı Detayı](images/meeting-detail.png)
+![Toplantı Detayı](images/toplantı_detayı.png)
 *Toplantı detay sayfası. Tarih/saat, konum, oluşturan kişi bilgileri, açıklama ve eklenen dokümanlar görüntülenir.*
 
 ### Toplantı İptal Etme
-![Toplantı İptal](images/meeting-cancel.png)
+![Toplantı İptal](images/iptal.png)
 *Toplantı listesinde "İptal Et" butonu ile toplantılar iptal edilebilir. İptal edilen toplantılar kırmızı renkte "İptal Edildi" durumu ile gösterilir.*
 
 ### Kullanıcı Profil Sayfası
-![Profil Sayfası](images/profile.png)
+![Profil Sayfası](images/profil.png)
 *Kullanıcı profil sayfası. Ad, soyad, e-posta ve telefon bilgileri görüntülenir ve güncellenebilir. Profil resmi de değiştirilebilir.*
 
 ## 🚀 Özellikler
