@@ -6,6 +6,9 @@ Bu proje, toplantı yönetimi için geliştirilmiş modern bir web uygulamasıd�
 
 ## 📸 Ekran Görüntüleri
 
+### Meeting Management
+![Meeting Management](images/gif.gif)
+
 ### Kullanıcı Kayıt Sayfası
 ![Kayıt Sayfası](images/kayıt.png)
 *Kullanıcılar ad, soyad, e-posta, telefon ve şifre bilgileriyle kayıt olabilir. Profil resmi yükleme özelliği mevcuttur.*
